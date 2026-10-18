@@ -333,7 +333,7 @@
         sceneBox.removeAttribute('data-scene');
         sceneBox.appendChild(h('p', { class: 'score', id: 'vo-final', text: 'You made ' + score + ' of ' + order.length + ' right calls.' }));
         sceneBox.appendChild(h('button', { type: 'button', class: 'btn', id: 'vo-again', text: 'Play again', onclick: begin }));
-        calls.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+        calls.querySelectorAll('button').forEach(function (b) { b.disabled = true; b.classList.remove('is-right', 'is-wrong'); b.removeAttribute('aria-label'); });
         nextBtn.hidden = true; fb.textContent = score === order.length ? 'Perfect observer!' : 'Play again to improve.';
         var again = document.getElementById('vo-again'); if (again) again.focus();
       }
