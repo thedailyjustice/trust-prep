@@ -18,7 +18,7 @@ a{color:var(--accent)}
 nav ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.25rem}
 nav a{display:inline-block;color:#fff;text-decoration:none;padding:.45rem .7rem;border-radius:.4rem;min-height:44px;line-height:1.7}
 nav a:hover,nav a[aria-current="page"]{background:#264b7f}
-.disclaimer{margin:0;background:var(--warn-bg);color:#3d2e00;padding:.55rem 1rem;text-align:center;font-weight:600;border-bottom:1px solid #e3cf8f}
+.disclaimer{margin:0;background:var(--warn-bg);color:#3d2e00;padding:.55rem 1rem;text-align:center;font-weight:600;border-bottom:1px solid #e3cf8f;position:static}
 main{display:block;max-width:60rem;margin:0 auto;padding:1rem}
 main:focus,h1:focus{outline:none}
 .card > h2:first-child{margin-top:0}
@@ -93,6 +93,7 @@ select{font:inherit;padding:.45rem;border:2px solid var(--line);border-radius:.4
 .calls .btn.is-wrong{opacity:1;border-color:var(--bad);background:var(--bad-bg);border-width:3px}
 .calls .btn.is-wrong::after{content:"your call";margin-left:auto;color:var(--bad);font-size:.85rem}
 .cell.S.on,.cell.F.on{background-image:none;outline-width:4px}
+#disclaimer-foot{border-bottom:none;border-top:1px solid #e3cf8f;margin-top:1rem}
 .foot{max-width:60rem;margin:1rem auto 2rem;padding:0 1rem;color:var(--muted);font-size:.9rem}
 @media (max-width:480px){
   h1{font-size:1.35rem}
