@@ -19,7 +19,8 @@ nav a{display:inline-block;color:#fff;text-decoration:none;padding:.45rem .7rem;
 nav a:hover,nav a[aria-current="page"]{background:#264b7f}
 .disclaimer{margin:0;background:var(--warn-bg);color:#3d2e00;padding:.55rem 1rem;text-align:center;font-weight:600;border-bottom:1px solid #e3cf8f}
 main{display:block;max-width:60rem;margin:0 auto;padding:1rem}
-main:focus{outline:none}
+main:focus,h1:focus{outline:none}
+.card > h2:first-child{margin-top:0}
 h1{font-size:1.6rem;line-height:1.25;margin:.5rem 0 .75rem}
 h2{font-size:1.25rem;margin:1.25rem 0 .5rem}
 .card{background:var(--card);border:1px solid var(--line);border-radius:.6rem;padding:1rem;margin:0 0 1rem}
@@ -85,11 +86,19 @@ select{font:inherit;padding:.45rem;border:2px solid var(--line);border-radius:.4
 .calls{display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:.5rem}
 .calls .btn{justify-content:flex-start;text-align:left;background:#fff;color:var(--ink);border-color:var(--line)}
 .calls .btn kbd{font:inherit;font-size:.8rem;border:1px solid var(--line);border-radius:.25rem;padding:0 .35rem;background:#eef2f8}
+.calls .btn.is-right{opacity:1;border-color:var(--ok);background:var(--ok-bg);border-width:3px}
+.calls .btn.is-right::after{content:"✓ right call";margin-left:auto;color:var(--ok);font-size:.85rem}
+.calls .btn.is-wrong{opacity:1;border-color:var(--bad);background:var(--bad-bg);border-width:3px}
+.calls .btn.is-wrong::after{content:"your call";margin-left:auto;color:var(--bad);font-size:.85rem}
+.cell.S.on,.cell.F.on{background-image:none;outline-width:4px}
 .foot{max-width:60rem;margin:1rem auto 2rem;padding:0 1rem;color:var(--muted);font-size:.9rem}
 @media (max-width:480px){
   h1{font-size:1.35rem}
   main{padding:.75rem}
-  .sky{height:18rem}
+  .sky{height:15rem;max-width:none}
+  .hud{gap:.25rem}
+  .hud p{margin:.15rem 0}
+  .hud .pad{order:-1}
   .cell{font-size:.7rem}
 }
 @media (prefers-reduced-motion:reduce){

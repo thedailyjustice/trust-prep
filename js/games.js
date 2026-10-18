@@ -67,7 +67,7 @@
         var gust = reduced ? 18 : 30;
         st.wind += (Math.random() - 0.5) * gust * 4 * dt;
         st.wind = Math.max(-22, Math.min(22, st.wind * 0.995));
-        var acc = st.wind + (st.up ? 55 : 0) - (st.down ? 55 : 0) - st.vel * 1.3;
+        var acc = st.wind + (st.up ? 80 : 0) - (st.down ? 80 : 0) - st.vel * 2;
         st.vel += acc * dt; st.alt += st.vel * dt;
         if (st.alt < 0) { st.alt = 0; st.vel = 0; }
         if (st.alt > MAXFT) { st.alt = MAXFT; st.vel = 0; }
@@ -301,7 +301,7 @@
       }
       function show() {
         answered = false; fb.textContent = ''; nextBtn.hidden = true;
-        calls.querySelectorAll('button').forEach(function (b) { b.disabled = false; });
+        calls.querySelectorAll('button').forEach(function (b) { b.disabled = false; b.classList.remove('is-right', 'is-wrong'); b.removeAttribute('aria-label'); });
         var sc = order[i];
         sceneBox.textContent = '';
         sceneBox.setAttribute('data-scene', sc.id);
@@ -316,7 +316,11 @@
         if (right) score++;
         var good = C.VO_CALLS.filter(function (c) { return c.k === sc.a; })[0].label;
         fb.textContent = (right ? 'Good call! ' : 'Not the best call. The right call: "' + good + '". ') + sc.e;
-        calls.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+        calls.querySelectorAll('button').forEach(function (b) {
+          b.disabled = true;
+          if (b.getAttribute('data-call') === sc.a) { b.classList.add('is-right'); b.setAttribute('aria-label', b.textContent + ' (right call)'); }
+          else if (b.getAttribute('data-call') === k) { b.classList.add('is-wrong'); b.setAttribute('aria-label', b.textContent + ' (your call)'); }
+        });
         prog.textContent = 'Scene ' + (i + 1) + ' of ' + order.length + ' · Score: ' + score;
         nextBtn.textContent = i < order.length - 1 ? 'Next scene (Enter)' : 'See results (Enter)';
         nextBtn.hidden = false; nextBtn.focus();
