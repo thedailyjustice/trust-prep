@@ -23,6 +23,12 @@
   function factList(api, facts) {
     return api.h('ul', { class: 'small' }, facts.map(function (f) { return api.h('li', { 'data-line': f.id, text: f.t }); }));
   }
+  // Button label with an optional key hint, e.g. "Start" + " (Space)". The hint is a separate span so
+  // touch devices can hide it with CSS (see .keyhint); the label itself never changes.
+  function setLabel(btn, text, key) {
+    btn.textContent = text;
+    if (key) { var k = document.createElement('span'); k.className = 'keyhint'; k.textContent = ' (' + key + ')'; btn.appendChild(k); }
+  }
   function allFacts(list) { var o = []; list.forEach(function (x) { o = o.concat(x.f); }); return o; }
 
   // ---------------- Hover hold ----------------
@@ -73,8 +79,8 @@
       var altOut = h('p', { class: 'meter score', id: 'hover-alt' });
       var timeOut = h('p', { class: 'meter', id: 'hover-time' });
       var msg = h('p', { class: 'status', role: 'status', 'aria-live': 'polite', id: 'hover-msg' });
-      var startBtn = h('button', { type: 'button', class: 'btn', id: 'hover-start', text: 'Start (Space)' });
-      var pauseBtn = h('button', { type: 'button', class: 'btn alt', id: 'hover-pause', text: 'Pause (P)', disabled: true });
+      var startBtn = h('button', { type: 'button', class: 'btn', id: 'hover-start' }); setLabel(startBtn, 'Start', 'Space');
+      var pauseBtn = h('button', { type: 'button', class: 'btn alt', id: 'hover-pause', disabled: true }); setLabel(pauseBtn, 'Pause', 'P');
       var upBtn = h('button', { type: 'button', class: 'btn', id: 'hover-up', 'aria-label': 'Climb (hold)', text: '▲' });
       var dnBtn = h('button', { type: 'button', class: 'btn', id: 'hover-down', 'aria-label': 'Descend (hold)', text: '▼' });
       box.appendChild(h('p', { text: 'Keep the drone inside the green band (' + BAND_LO + ' to ' + BAND_HI + ' feet) while the wind pushes it. Hold ▲ or ▼, or use the Up and Down arrow keys (or W and S). Stay in the band for ' + GOAL + '% of ' + ROUND + ' seconds to win.' }));
@@ -104,8 +110,20 @@
       function begin() {
         HOVER.init(st); st.run = true; st.paused = false;
         msg.textContent = 'Go! Keep it in the green band.';
-        startBtn.textContent = 'Restart'; pauseBtn.disabled = false; pauseBtn.textContent = 'Pause (P)';
+        fitGame();
+        setLabel(startBtn, 'Restart'); pauseBtn.disabled = false; setLabel(pauseBtn, 'Pause', 'P');
         draw();
+      }
+      // On short screens, bring the whole game (Start row, readouts, sky, climb/descend pad, message)
+      // into view above the pinned bar when a round starts, so every control can be tapped without scrolling.
+      function fitGame() {
+        var wrap = box.querySelector('.hover-wrap'); if (!wrap) return;
+        var bar = document.getElementById('disclaimer-foot');
+        var limit = (bar ? bar.getBoundingClientRect().top : window.innerHeight) - 6;
+        var top = wrap.getBoundingClientRect().top, bottom = 0;
+        [upBtn, dnBtn, msg, altOut, timeOut, sky].forEach(function (el) { bottom = Math.max(bottom, el.getBoundingClientRect().bottom); });
+        if (bottom > limit) window.scrollBy(0, Math.min(bottom - limit, top - 6));
+        else if (top < 0) window.scrollBy(0, top - 6);
       }
       function finish() {
         st.run = false; pauseBtn.disabled = true;
@@ -115,12 +133,12 @@
         if (pct >= GOAL) s.games.hover.wins += 1;
         api.save();
         msg.textContent = (pct >= GOAL ? 'Steady flying! ' : 'Keep practicing. ') + 'You stayed in the band ' + pct + '% of the time' + (st.over > 0 ? ', and went above 400 feet for ' + st.over.toFixed(1) + ' seconds.' : '.') + ' Press Start to try again.';
-        startBtn.textContent = 'Start (Space)';
+        setLabel(startBtn, 'Start', 'Space');
         draw();
       }
       function togglePause() {
         if (!st.run) return;
-        st.paused = !st.paused; pauseBtn.textContent = st.paused ? 'Resume (P)' : 'Pause (P)';
+        st.paused = !st.paused; setLabel(pauseBtn, st.paused ? 'Resume' : 'Pause', 'P');
         msg.textContent = st.paused ? 'Paused.' : 'Back to it!';
         draw();
       }
@@ -342,7 +360,7 @@
       var sceneBox = h('div', { class: 'card', id: 'vo-scene', 'aria-live': 'polite' });
       var calls = h('div', { class: 'calls', role: 'group', 'aria-label': 'Your call' });
       var fb = h('p', { class: 'status score', role: 'status', 'aria-live': 'polite', id: 'vo-msg' });
-      var nextBtn = h('button', { type: 'button', class: 'btn', id: 'vo-next', text: 'Next scene (Enter)', hidden: true });
+      var nextBtn = h('button', { type: 'button', class: 'btn', id: 'vo-next', hidden: true }); setLabel(nextBtn, 'Next scene', 'Enter');
       var prog = h('p', { class: 'small', id: 'vo-prog' });
       box.appendChild(h('p', { text: 'You are the visual observer, standing right next to the pilot. Read each scene and make the call. Press a button, or press keys 1 to 5.' }));
       box.appendChild(prog); box.appendChild(sceneBox); box.appendChild(calls); box.appendChild(fb); box.appendChild(h('div', { class: 'row' }, [nextBtn]));
@@ -377,7 +395,7 @@
           else if (b.getAttribute('data-call') === k) { b.classList.add('is-wrong'); b.setAttribute('aria-label', b.textContent + ' (your call)'); }
         });
         prog.textContent = 'Scene ' + (i + 1) + ' of ' + order.length + ' · Score: ' + score;
-        nextBtn.textContent = i < order.length - 1 ? 'Next scene (Enter)' : 'See results (Enter)';
+        setLabel(nextBtn, i < order.length - 1 ? 'Next scene' : 'See results', 'Enter');
         nextBtn.hidden = false; nextBtn.focus();
       }
       function next() {
