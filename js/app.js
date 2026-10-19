@@ -386,7 +386,7 @@
       ]),
       h('section', { class: 'card' }, [
         h('h2', { text: 'About this app' }),
-        h('p', { text: 'TRUST Prep is a classroom practice tool for 7th grade STEM at Riverdale K-8. It is not TRUST, it is not made by the FAA, and it does not give out certificates. Practice questions are original. Facts were checked against FAA pages on ' + C.CHECKED + '.' })
+        h('p', { text: 'TRUST Prep is a classroom practice tool for a 7th grade STEM class. It is not TRUST, it is not made by the FAA, and it does not give out certificates. Practice questions are original. Facts were checked against FAA pages on ' + C.CHECKED + '.' })
       ])
     ];
   }
