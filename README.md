@@ -1,6 +1,6 @@
 # TRUST Prep (v1)
 
-A classroom practice tool for Mr. Johnathan's 7th grade STEM class at Riverdale K-8 (Germantown, TN), Quarter 2.
+A classroom practice tool for a 7th grade STEM class, Quarter 2.
 
 **This is a separate classroom tool.** It is not TRUST, it is not made or endorsed by the FAA, and it is not an FAA product. It does not give out certificates. Every screen shows:
 
@@ -15,7 +15,7 @@ It is also separate from the SI Challenge entry (Fault Finder). It shares no cod
 - A 12-question mixed practice quiz (also fix-until-100%)
 - Three games: Hover hold, Airspace path, Visual observer calls
 
-All practice items are original. None are copied from TRUST. Every lesson line and item comes from Proof's FAA fact sheet (`../review/faa-facts.md`, checked 2026-10-18). `../review/sources.csv` maps each line and item to its fact-sheet entry and source URL.
+All practice items are original. None are copied from TRUST. Every lesson line and item comes from Proof's FAA fact sheet (checked 2026-10-18).
 
 ## Privacy
 - No logins, no accounts, no student info, no trackers, no analytics.
