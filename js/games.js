@@ -26,13 +26,45 @@
   function allFacts(list) { var o = []; list.forEach(function (x) { o = o.concat(x.f); }); return o; }
 
   // ---------------- Hover hold ----------------
+  // Physics lives here as pure functions so testing/hover-sim.js runs the exact same formula.
+  // Wind has a steady push (random direction each round, growing over the round, and it may
+  // switch direction once) plus random gusts. Doing nothing drifts out of the band; a player who
+  // keeps correcting with Climb/Descend can stay in it.
+  var HOVER = {
+    MAXFT: 450, BAND_LO: 170, BAND_HI: 230, ROUND: 30, GOAL: 60, START: 200,
+    THRUST: 80, DAMP: 2, BASE: 16, RAMP: 10, GUST: 10, FLIP_P: 0.5, FLIP_MIN: 10, FLIP_MAX: 20,
+    init: function (st, rnd) {
+      rnd = rnd || Math.random;
+      st.alt = HOVER.START; st.vel = 0; st.t = 0; st.inBand = 0; st.over = 0; st.gust = 0;
+      st.dir = rnd() < 0.5 ? -1 : 1;
+      st.flipAt = rnd() < HOVER.FLIP_P ? HOVER.FLIP_MIN + rnd() * (HOVER.FLIP_MAX - HOVER.FLIP_MIN) : Infinity;
+      st.wind = 0;
+      return st;
+    },
+    step: function (st, dt, rnd, reducedMotion) {
+      rnd = rnd || Math.random;
+      var H = HOVER, g = reducedMotion ? H.GUST * 0.6 : H.GUST;
+      if (st.t >= st.flipAt) { st.dir = -st.dir; st.flipAt = Infinity; }
+      st.gust += (rnd() - 0.5) * g * 8 * dt;
+      st.gust = Math.max(-g, Math.min(g, st.gust * 0.99));
+      st.wind = st.dir * (H.BASE + H.RAMP * Math.min(1, st.t / H.ROUND)) + st.gust;
+      var acc = st.wind + (st.up ? H.THRUST : 0) - (st.down ? H.THRUST : 0) - st.vel * H.DAMP;
+      st.vel += acc * dt; st.alt += st.vel * dt;
+      if (st.alt < 0) { st.alt = 0; st.vel = 0; }
+      if (st.alt > H.MAXFT) { st.alt = H.MAXFT; st.vel = 0; }
+      if (st.alt > 400) st.over += dt;
+      if (st.alt >= H.BAND_LO && st.alt <= H.BAND_HI) st.inBand += dt;
+      st.t += dt;
+      return st;
+    }
+  };
   var hover = {
     title: 'Hover hold',
     start: function (box, api) {
       var h = api.h, C = api.C;
-      var MAXFT = 450, BAND_LO = 160, BAND_HI = 240, ROUND = 30, GOAL = 60;
-      var st = { alt: 200, vel: 0, wind: 0, t: 0, inBand: 0, over: 0, run: false, paused: false, up: false, down: false };
-      var sky = h('div', { class: 'sky', role: 'img', 'aria-label': 'Sky with the drone, a green target band from 160 to 240 feet, and a dashed 400-foot line' });
+      var MAXFT = HOVER.MAXFT, BAND_LO = HOVER.BAND_LO, BAND_HI = HOVER.BAND_HI, ROUND = HOVER.ROUND, GOAL = HOVER.GOAL;
+      var st = HOVER.init({ run: false, paused: false, up: false, down: false });
+      var sky = h('div', { class: 'sky', role: 'img', 'aria-label': 'Sky with the drone, a green target band from ' + BAND_LO + ' to ' + BAND_HI + ' feet, and a dashed 400-foot line' });
       function yFor(ft) { return (1 - ft / MAXFT) * 100; }
       var band = h('div', { class: 'band' }); band.style.top = yFor(BAND_HI) + '%'; band.style.height = (yFor(BAND_LO) - yFor(BAND_HI)) + '%';
       var ceil = h('div', { class: 'ceil' }, [h('span', { text: '400 ft' })]); ceil.style.top = yFor(400) + '%';
@@ -45,8 +77,8 @@
       var pauseBtn = h('button', { type: 'button', class: 'btn alt', id: 'hover-pause', text: 'Pause (P)', disabled: true });
       var upBtn = h('button', { type: 'button', class: 'btn', id: 'hover-up', 'aria-label': 'Climb (hold)', text: '▲' });
       var dnBtn = h('button', { type: 'button', class: 'btn', id: 'hover-down', 'aria-label': 'Descend (hold)', text: '▼' });
-      box.appendChild(h('p', { text: 'Keep the drone inside the green band (160 to 240 feet) while the wind pushes it. Hold ▲ or ▼, or use the Up and Down arrow keys (or W and S). Stay in the band for ' + GOAL + '% of ' + ROUND + ' seconds to win.' }));
-      box.appendChild(h('div', { class: 'hover-wrap' }, [sky, h('div', { class: 'hud' }, [altOut, timeOut, h('div', { class: 'row' }, [startBtn, pauseBtn]), h('div', { class: 'pad' }, [upBtn, dnBtn]), msg])]));
+      box.appendChild(h('p', { text: 'Keep the drone inside the green band (' + BAND_LO + ' to ' + BAND_HI + ' feet) while the wind pushes it. Hold ▲ or ▼, or use the Up and Down arrow keys (or W and S). Stay in the band for ' + GOAL + '% of ' + ROUND + ' seconds to win.' }));
+      box.appendChild(h('div', { class: 'hover-wrap' }, [sky, h('div', { class: 'hud' }, [altOut, timeOut, h('div', { class: 'row hover-ctl' }, [startBtn, pauseBtn]), h('div', { class: 'pad' }, [upBtn, dnBtn]), msg])]));
       box.appendChild(factList(api, C.HOVER_FACTS));
       box.appendChild(api.sourcesBox(allFacts(C.HOVER_FACTS)));
 
@@ -64,23 +96,15 @@
         if (!last) { last = ts; return; }
         var dt = Math.min(0.05, (ts - last) / 1000); last = ts;
         if (!st.run || st.paused) return;
-        var gust = reduced ? 18 : 30;
-        st.wind += (Math.random() - 0.5) * gust * 4 * dt;
-        st.wind = Math.max(-22, Math.min(22, st.wind * 0.995));
-        var acc = st.wind + (st.up ? 80 : 0) - (st.down ? 80 : 0) - st.vel * 2;
-        st.vel += acc * dt; st.alt += st.vel * dt;
-        if (st.alt < 0) { st.alt = 0; st.vel = 0; }
-        if (st.alt > MAXFT) { st.alt = MAXFT; st.vel = 0; }
-        if (st.alt > 400) { st.over += dt; if (!warned) { msg.textContent = 'Above 400 feet! Come back down. That is over the Class G limit.'; warned = true; } } else warned = false;
-        if (st.alt >= BAND_LO && st.alt <= BAND_HI) st.inBand += dt;
-        st.t += dt;
+        HOVER.step(st, dt, Math.random, reduced);
+        if (st.alt > 400) { if (!warned) { msg.textContent = 'Above 400 feet! Come back down. That is over the Class G limit.'; warned = true; } } else warned = false;
         if (st.t >= ROUND) finish();
         draw();
       }
       function begin() {
-        st.alt = 200; st.vel = 0; st.wind = (Math.random() < 0.5 ? -1 : 1) * 8; st.t = 0; st.inBand = 0; st.over = 0; st.run = true; st.paused = false;
+        HOVER.init(st); st.run = true; st.paused = false;
         msg.textContent = 'Go! Keep it in the green band.';
-        startBtn.textContent = 'Restart (Space)'; pauseBtn.disabled = false; pauseBtn.textContent = 'Pause (P)';
+        startBtn.textContent = 'Restart'; pauseBtn.disabled = false; pauseBtn.textContent = 'Pause (P)';
         draw();
       }
       function finish() {
@@ -120,7 +144,10 @@
         var k = e.key;
         if (k === 'ArrowUp' || k === 'w' || k === 'W') { st.up = true; e.preventDefault(); }
         else if (k === 'ArrowDown' || k === 's' || k === 'S') { st.down = true; e.preventDefault(); }
-        else if ((k === ' ' || k === 'Spacebar') && (e.target === document.body || e.target === startBtn || e.target === sky || !e.target.closest || !e.target.closest('button,a'))) { e.preventDefault(); begin(); }
+        else if ((k === ' ' || k === 'Spacebar') && (e.target === document.body || e.target === startBtn || e.target === sky || !e.target.closest || !e.target.closest('button,a,summary'))) {
+          e.preventDefault();
+          if (!st.run) begin(); // during a round Space does nothing, so a rushed tap can't wipe the run
+        }
         else if (k === 'p' || k === 'P') togglePause();
       }
       function ku(e) {
@@ -161,15 +188,18 @@
         h('li', null, [h('span', { class: 'sw t' }), 'T = TFR (wildfire)']),
         h('li', null, [h('span', { class: 'sw x' }), 'X = stadium game'])
       ]));
-      box.appendChild(map);
-      box.appendChild(routeOut);
-      box.appendChild(h('div', { class: 'row' }, [
+      var nextBtn = h('button', { type: 'button', class: 'btn', id: 'path-next', text: 'Next map →', hidden: true, onclick: function () { if (lvl < C.PATH_LEVELS.length - 1) { lvl++; build(); var f = map.querySelector('.cell[tabindex="0"]'); if (f) f.focus(); } } });
+      var side = h('div', { class: 'path-side' });
+      box.appendChild(h('div', { class: 'path-wrap' }, [map, side]));
+      side.appendChild(routeOut);
+      side.appendChild(h('div', { class: 'row' }, [
         h('label', { for: 'path-alt', text: 'Route height:' }), altSel,
         h('button', { type: 'button', class: 'btn', id: 'path-check', text: 'Check route', onclick: check }),
         h('button', { type: 'button', class: 'btn alt', id: 'path-undo', text: 'Undo', onclick: function () { if (route.length > 1) { route.pop(); paint(); msg.textContent = 'Removed the last square.'; } } }),
         h('button', { type: 'button', class: 'btn alt', id: 'path-clear', text: 'Clear', onclick: function () { route = route.slice(0, 1); paint(); msg.textContent = 'Route cleared.'; } })
       ]));
-      box.appendChild(msg);
+      side.appendChild(msg);
+      side.appendChild(h('div', { class: 'row path-next-row' }, [nextBtn]));
       box.appendChild(factList(api, C.PATH_FACTS));
       box.appendChild(api.sourcesBox(allFacts(C.PATH_FACTS)));
 
@@ -196,16 +226,28 @@
         var end = route[route.length - 1];
         if (i === route.length - 1 && route.length > 1) { route.pop(); paint(); msg.textContent = 'Removed that square.'; return; }
         if (i >= 0) { msg.textContent = 'That square is already on your route.'; return; }
-        if (Math.abs(end[0] - r) + Math.abs(end[1] - c) !== 1) { msg.textContent = 'Pick a square right next to the end of your route (up, down, left, or right).'; return; }
+        if (Math.abs(end[0] - r) + Math.abs(end[1] - c) !== 1) { msg.textContent = 'Pick a square right next to the end of your route (up, down, left, or right).'; showMsg(); return; }
         route.push([r, c]); paint(); msg.textContent = '';
+        // Route reaches the field: bring the height picker and Check route into view (clear of the pinned bar).
+        if (grid[r][c] === 'F') { var ck = document.getElementById('path-check'); if (ck && ck.scrollIntoView) ck.scrollIntoView({ block: 'nearest' }); }
       }
       function focusCell(r, c) {
         cells.forEach(function (b) { b.tabIndex = -1; });
         var b = cells[idx(r, c)]; b.tabIndex = 0; b.focus();
       }
-      function build() {
+      // On narrow phones the 6x9 map is shown turned (9 rows x 6 columns) so every square can be 44px+.
+      var narrowMQ = window.matchMedia ? window.matchMedia('(max-width: 480px)') : null;
+      function narrow() { return !!(narrowMQ && narrowMQ.matches); }
+      function gridFor(L) {
+        var g = L.rows.map(function (row) { return row.split(''); });
+        if (!narrow()) return g;
+        return g[0].map(function (_, c) { return g.map(function (row) { return row[c]; }); });
+      }
+      function build(keepRoute) {
         var L = C.PATH_LEVELS[lvl];
-        grid = L.rows.map(function (row) { return row.split(''); });
+        grid = gridFor(L);
+        map.setAttribute('data-turned', narrow() ? '1' : '0');
+        nextBtn.hidden = true;
         rows = grid.length; cols = grid[0].length;
         route = [];
         map.textContent = ''; cells = [];
@@ -225,9 +267,9 @@
           })(r, c);
           cells.push(b); map.appendChild(b);
         }
+        if (keepRoute) route = keepRoute;
         cells[idx(route[0][0], route[0][1])].tabIndex = 0;
-        altSel.value = '';
-        msg.textContent = 'Map ' + (lvl + 1) + ': ' + L.name + '.';
+        if (!keepRoute) { altSel.value = ''; msg.textContent = 'Map ' + (lvl + 1) + ': ' + L.name + '.'; }
         lvlRow.querySelectorAll('button').forEach(function (b, i) { b.setAttribute('aria-pressed', i === lvl ? 'true' : 'false'); });
         paint();
       }
@@ -250,15 +292,28 @@
         if (!alt) probs.push('Pick a route height.');
         else if (alt > 400) probs.push(alt + ' feet is too high. In Class G, fly at 400 feet or lower.');
         paint(bad);
-        if (probs.length) { msg.textContent = 'Not yet. ' + probs.join(' '); return; }
+        if (probs.length) { msg.textContent = 'Not yet. ' + probs.join(' '); showMsg(); return; }
         var s = api.state(), id = C.PATH_LEVELS[lvl].id;
         if (s.games.path.done.indexOf(id) < 0) s.games.path.done.push(id);
         api.save();
         var lb = lvlRow.querySelector('[data-level="' + lvl + '"]'); if (lb) lb.textContent = 'Map ' + (lvl + 1) + ' ✓';
         msg.textContent = 'Safe route! You stayed in Class G, out of restricted areas, at ' + alt + ' feet.' + (lvl < C.PATH_LEVELS.length - 1 ? ' Try the next map.' : ' You solved every map.');
+        nextBtn.hidden = lvl >= C.PATH_LEVELS.length - 1;
+        showMsg();
       }
+      // Make sure the feedback line (and Next map) is on screen after Check, above the pinned bar.
+      function showMsg() {
+        var r1 = msg.getBoundingClientRect(), r2 = nextBtn.hidden ? r1 : nextBtn.getBoundingClientRect();
+        var top = Math.min(r1.top, r2.top), bot = Math.max(r1.bottom, r2.bottom);
+        var bar = document.getElementById('disclaimer-foot');
+        var limit = bar ? bar.getBoundingClientRect().top : window.innerHeight;
+        if (top < 0) window.scrollBy(0, top - 8);
+        else if (bot > limit) window.scrollBy(0, Math.min(top - 8, bot - limit + 8));
+      }
+      function onMQ() { var keep = route.map(function (p) { return [p[1], p[0]]; }); build(keep); }
+      if (narrowMQ) { if (narrowMQ.addEventListener) narrowMQ.addEventListener('change', onMQ); else if (narrowMQ.addListener) narrowMQ.addListener(onMQ); }
       build();
-      return function stop() {};
+      return function stop() { if (narrowMQ) { if (narrowMQ.removeEventListener) narrowMQ.removeEventListener('change', onMQ); else if (narrowMQ.removeListener) narrowMQ.removeListener(onMQ); } };
     }
   };
 
@@ -351,4 +406,5 @@
   };
 
   window.TP_GAMES = { hover: hover, path: path, vo: vo };
+  window.TP_HOVER = HOVER;
 })();

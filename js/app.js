@@ -7,7 +7,7 @@
 
   // ---------- storage ----------
   function blank() {
-    return { v: 1, nick: '', mods: {}, quiz: false, games: { hover: { best: 0, wins: 0 }, path: { done: [] }, vo: { best: 0, plays: 0 } } };
+    return { v: 1, nick: '', mods: {}, quiz: false, quizFirst: null, games: { hover: { best: 0, wins: 0 }, path: { done: [] }, vo: { best: 0, plays: 0 } } };
   }
   function load() {
     try {
@@ -19,6 +19,8 @@
       b.nick = typeof s.nick === 'string' ? s.nick.slice(0, 20) : '';
       b.mods = s.mods && typeof s.mods === 'object' ? s.mods : {};
       b.quiz = !!s.quiz;
+      b.quizFirst = firstOk(s.quizFirst) ? { r: s.quizFirst.r, of: s.quizFirst.of } : null;
+      Object.keys(b.mods).forEach(function (k) { var m = b.mods[k]; if (!m || typeof m !== 'object') { delete b.mods[k]; return; } if (m.first !== undefined && !firstOk(m.first)) delete m.first; });
       if (s.games) {
         if (s.games.hover) b.games.hover = { best: +s.games.hover.best || 0, wins: +s.games.hover.wins || 0 };
         if (s.games.path && Array.isArray(s.games.path.done)) b.games.path.done = s.games.path.done.slice(0, 10);
@@ -27,6 +29,8 @@
       return b;
     } catch (e) { return blank(); }
   }
+  function firstOk(f) { return !!(f && typeof f === 'object' && f.r === +f.r && f.of === +f.of && f.r >= 0 && f.r <= f.of && f.of > 0 && f.of <= 50); }
+  function firstText(f) { return 'First try: ' + f.r + ' of ' + f.of; }
   var state = load();
   function save() {
     try { window.localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage full or blocked: keep going */ }
@@ -84,6 +88,59 @@
     ]);
   }
 
+  // Lesson line with tap-to-see word help. The reviewed line text is shown unchanged; a term
+  // becomes a button, and its plain-English note appears in parentheses right after it.
+  var glossN = 0;
+  function hasGloss(m) { return m.lesson.some(function (l) { return C.GLOSS.some(function (g) { return g.line === l[0]; }); }); }
+  var openGloss = []; // [btn, note, def] most recent last, so Esc anywhere closes the latest one
+  function setGloss(btn, note, def, open) {
+    note.textContent = open ? def : '';
+    note.setAttribute('data-open', open ? '1' : '0');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) { btn.setAttribute('aria-describedby', note.id); openGloss.push([btn, note, def]); keepClearOfBar(note); }
+    else { btn.removeAttribute('aria-describedby'); openGloss = openGloss.filter(function (x) { return x[0] !== btn; }); }
+  }
+  // If an opened note lands under the pinned bar (or off the top), scroll just enough to show it.
+  function keepClearOfBar(el) {
+    var bar = document.getElementById('disclaimer-foot');
+    var limit = bar ? bar.getBoundingClientRect().top : window.innerHeight;
+    var rs = el.getClientRects(); if (!rs.length) return;
+    var top = rs[0].top, bot = rs[rs.length - 1].bottom;
+    if (bot > limit - 4) window.scrollBy(0, Math.min(top - 8, bot - limit + 8));
+    else if (top < 0) window.scrollBy(0, top - 8);
+  }
+  document.addEventListener('keydown', function (e) {
+    if ((e.key !== 'Escape' && e.key !== 'Esc') || !openGloss.length) return;
+    var x = openGloss[openGloss.length - 1];
+    if (!document.body.contains(x[0])) { openGloss = []; return; }
+    setGloss(x[0], x[1], x[2], false); x[0].focus();
+  });
+
+  function lessonLine(l) {
+    var li = h('li', { 'data-line': l[0] });
+    var text = l[1], pos = 0;
+    var gs = C.GLOSS.filter(function (g) { return g.line === l[0]; })
+      .map(function (g) { return { g: g, at: text.indexOf(g.w) }; })
+      .filter(function (x) { return x.at >= 0; })
+      .sort(function (a, b) { return a.at - b.at; });
+    gs.forEach(function (x) {
+      if (x.at < pos) return;
+      li.appendChild(document.createTextNode(text.slice(pos, x.at)));
+      var id = 'gl-' + (++glossN);
+      // The note is a polite live region that is empty while closed, so opening it is announced and
+      // the reviewed line reads exactly as written until a student taps the word.
+      var note = h('span', { class: 'gloss', id: id, 'data-gloss': x.g.id, 'aria-live': 'polite', 'data-open': '0' });
+      var btn = h('button', { type: 'button', class: 'term', 'aria-expanded': 'false', 'aria-controls': id, 'data-term': x.g.id, text: x.g.w });
+      var def = ' (' + x.g.d + ')';
+      btn.addEventListener('click', function () { setGloss(btn, note, def, note.getAttribute('data-open') !== '1'); });
+      btn.addEventListener('keydown', function (e) { if ((e.key === 'Escape' || e.key === 'Esc') && note.getAttribute('data-open') === '1') { e.preventDefault(); e.stopPropagation(); setGloss(btn, note, def, false); btn.focus(); } });
+      li.appendChild(btn); li.appendChild(note);
+      pos = x.at + x.g.w.length;
+    });
+    li.appendChild(document.createTextNode(text.slice(pos)));
+    return li;
+  }
+
   function modDone(n) { return !!(state.mods[n] && state.mods[n].done); }
   function doneCount() { return C.MODULES.filter(function (m) { return modDone(m.n); }).length; }
   function allDone() { return doneCount() === C.MODULES.length && state.quiz; }
@@ -95,6 +152,7 @@
     var wrap = h('form', { class: 'check', novalidate: true, 'aria-describedby': opts.id + '-status' });
     var status = h('p', { class: 'status score', id: opts.id + '-status', role: 'status', 'aria-live': 'polite' });
     var tries = 0;
+    var first = {}; // item id -> was the first answer picked for it right?
     var fields = items.map(function (it, idx) {
       var order = shuffle(it.o.map(function (_, i) { return i; }));
       var fb = h('p', { class: 'fb', 'aria-live': 'polite' });
@@ -113,7 +171,7 @@
     var btn = h('button', { type: 'submit', class: 'btn', text: 'Check answers' });
     wrap.appendChild(h('div', { class: 'row' }, [btn]));
     wrap.appendChild(status);
-    if (opts.alreadyDone) status.textContent = 'You already reached 100% here. You can practice again any time.';
+    if (opts.alreadyDone) status.textContent = 'You already reached 100% here' + (opts.savedFirst ? ' (' + firstText(opts.savedFirst).toLowerCase() + ', your first time through)' : '') + '. You can practice again any time.';
 
     wrap.addEventListener('submit', function (ev) {
       ev.preventDefault();
@@ -123,6 +181,7 @@
         if (locked[f.it.id]) { right++; return; }
         var pick = f.fs.querySelector('input:checked');
         if (!pick) { missing++; f.fs.className = 'q'; f.fb.className = 'fb wrong'; f.fb.textContent = 'Pick an answer.'; if (!firstBad) firstBad = f; return; }
+        if (!(f.it.id in first)) first[f.it.id] = +pick.value === f.it.a;
         if (+pick.value === f.it.a) {
           locked[f.it.id] = true; right++;
           f.fs.className = 'q right';
@@ -139,9 +198,11 @@
       });
       var pct = Math.round(100 * right / items.length);
       if (right === items.length) {
-        status.textContent = '100%! All ' + items.length + ' right.' + (opts.doneMsg ? ' ' + opts.doneMsg : '');
+        var fr = { r: items.filter(function (it) { return first[it.id]; }).length, of: items.length };
+        status.textContent = '100%! All ' + items.length + ' right. ' + firstText(fr) + '.' + (opts.doneMsg ? ' ' + opts.doneMsg : '');
+        status.setAttribute('data-first', fr.r + '/' + fr.of);
         btn.disabled = true;
-        opts.onDone(tries);
+        opts.onDone(tries, fr);
       } else {
         status.textContent = right + ' of ' + items.length + ' right (' + pct + '%). Fix the red ones and check again.' + (missing ? ' ' + missing + ' not answered yet.' : '');
         if (firstBad) { var inp = firstBad.fs.querySelector('input:not([disabled])'); if (inp) inp.focus(); }
@@ -191,7 +252,8 @@
     setTitle('Module ' + m.n + ': ' + m.title);
     var lesson = h('section', { class: 'card lesson', 'aria-labelledby': 'les-h' }, [
       h('h2', { id: 'les-h', text: 'Lesson' }),
-      h('ul', null, m.lesson.map(function (l) { return h('li', { 'data-line': l[0], text: l[1] }); }))
+      hasGloss(m) ? h('p', { class: 'small', id: 'gloss-hint', text: C.GLOSS_HINT }) : null,
+      h('ul', null, m.lesson.map(function (l) { return lessonLine(l); }))
     ]);
     var next = C.MODULES.filter(function (x) { return x.n === n + 1; })[0];
     var nextRow = h('div', { class: 'row' }, [
@@ -209,10 +271,11 @@
       h('section', { class: 'card', 'aria-labelledby': 'chk-h' }, [
         h('h2', { id: 'chk-h', text: 'Check: get to 100%' }),
         checkSet(m.check, {
-          id: 'm' + m.n, alreadyDone: modDone(m.n), doneMsg: 'Module ' + m.n + ' is done.',
-          onDone: function (tries) {
+          id: 'm' + m.n, alreadyDone: modDone(m.n), savedFirst: state.mods[m.n] && state.mods[m.n].first, doneMsg: 'Module ' + m.n + ' is done.',
+          onDone: function (tries, fr) {
             var prev = state.mods[m.n] || {};
-            state.mods[m.n] = { done: true, tries: prev.tries ? Math.min(prev.tries, tries) : tries };
+            // The saved first-try score is from the first time through; practicing again does not change it.
+            state.mods[m.n] = { done: true, tries: prev.tries ? Math.min(prev.tries, tries) : tries, first: firstOk(prev.first) ? prev.first : fr };
             save();
           }
         })
@@ -230,8 +293,8 @@
       heading('Mixed practice quiz'),
       h('p', { text: C.QUIZ.length + ' questions from all modules, in a new order each time. Fix answers until you reach 100%.' }),
       h('section', { class: 'card' }, [checkSet(shuffle(C.QUIZ), {
-        id: 'quiz', alreadyDone: state.quiz, doneMsg: 'Quiz done.',
-        onDone: function () { state.quiz = true; save(); }
+        id: 'quiz', alreadyDone: state.quiz, savedFirst: state.quizFirst, doneMsg: 'Quiz done.',
+        onDone: function (tries, fr) { state.quiz = true; if (!state.quizFirst) state.quizFirst = fr; save(); }
       })]),
       sourcesBox(facts)
     ];
@@ -267,10 +330,27 @@
     var confirmRow = h('div', { class: 'row', hidden: true, id: 'reset-confirm' }, [
       h('span', { text: 'Erase all progress on this device?' }),
       h('button', { type: 'button', class: 'btn danger', id: 'reset-yes', text: 'Yes, erase it', onclick: function () { resetAll(); render(); var s = document.getElementById('reset-msg'); if (s) s.textContent = 'Progress erased.'; } }),
-      h('button', { type: 'button', class: 'btn alt', text: 'Cancel', onclick: function () { confirmRow.hidden = true; document.getElementById('reset-btn').focus(); } })
+      h('button', { type: 'button', class: 'btn alt', id: 'reset-cancel', text: 'Cancel', onclick: function () { confirmRow.hidden = true; document.getElementById('reset-btn').focus(); } })
     ]);
-    var nickIn = h('input', { type: 'text', id: 'nick', maxlength: '20', autocomplete: 'off', spellcheck: 'false', value: state.nick, 'aria-describedby': 'nick-help' });
-    var nickMsg = h('p', { class: 'status', role: 'status', 'aria-live': 'polite' });
+    var nickIn = h('input', { type: 'text', id: 'nick', maxlength: '20', autocomplete: 'off', spellcheck: 'false', value: state.nick, 'aria-describedby': 'nick-help nick-warn' });
+    var nickMsg = h('p', { class: 'status', role: 'status', 'aria-live': 'polite', id: 'nick-msg' });
+    var nickWarn = h('p', { class: 'warn', id: 'nick-warn', 'aria-live': 'polite', hidden: true, text: 'That looks like a real name. Please use a nickname.' });
+    function cleanNick(v) { return v.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20); }
+    function checkNick() {
+      nickWarn.hidden = !looksLikeName(nickIn.value);
+      if (cleanNick(nickIn.value) !== state.nick) nickMsg.textContent = 'Not saved yet. Press Enter or Save nickname.';
+      else if (/^Not saved/.test(nickMsg.textContent)) nickMsg.textContent = '';
+    }
+    function saveNick() {
+      var v = cleanNick(nickIn.value);
+      if (v === state.nick && !/^Not saved/.test(nickMsg.textContent)) return;
+      state.nick = v; save(); nickMsg.textContent = state.nick ? 'Saved.' : 'Nickname cleared.';
+      nickWarn.hidden = !looksLikeName(nickIn.value);
+    }
+    nickIn.addEventListener('input', checkNick);
+    nickIn.addEventListener('blur', saveNick);
+    nickIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); saveNick(); } });
+    if (state.nick) nickWarn.hidden = !looksLikeName(state.nick);
     return [
       heading('Your progress'),
       allDone() ? h('section', { class: 'card complete', id: 'practice-complete' }, [
@@ -280,23 +360,27 @@
       ]) : null,
       h('section', { class: 'card' }, [
         h('p', { class: 'score', text: doneCount() + ' of ' + C.MODULES.length + ' module checks at 100%' }),
-        h('p', { text: 'Mixed quiz: ' + (state.quiz ? '100%' : 'not done yet') }),
+        h('p', { text: 'Mixed quiz: ' + (state.quiz ? '100%' + (state.quizFirst ? ' · ' + firstText(state.quizFirst) : '') : 'not done yet'), id: 'quiz-first' }),
+        h('details', { class: 'firsts', id: 'first-tries' }, [
+          h('summary', { text: 'First-try scores by module' }),
+          h('p', { class: 'small', text: 'How many questions you got right on your first pick, the first time you finished each check.' }),
+          h('ul', null, C.MODULES.map(function (m) { var s = state.mods[m.n]; return h('li', { 'data-first-mod': String(m.n), text: 'Module ' + m.n + ': ' + (s && s.done ? (s.first ? firstText(s.first) : '100% (first try not recorded)') : 'not done yet') }); }))
+        ]),
         h('p', { text: 'Hover hold best: ' + state.games.hover.best + '% · Airspace maps solved: ' + state.games.path.done.length + ' of ' + C.PATH_LEVELS.length + ' · Observer calls best: ' + state.games.vo.best + ' of ' + C.VO_SCENES.length })
       ]),
       h('section', { class: 'card' }, [
         h('h2', { text: 'Nickname (optional)' }),
         h('label', { class: 'field', for: 'nick', text: 'Nickname' }),
         nickIn,
-        h('p', { class: 'small', id: 'nick-help', text: 'Use a fun nickname, not your real name. It stays on this device only. You can leave it blank.' }),
-        h('div', { class: 'row' }, [h('button', { type: 'button', class: 'btn alt', id: 'nick-save', text: 'Save nickname', onclick: function () {
-          state.nick = nickIn.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20); save(); nickMsg.textContent = state.nick ? 'Saved.' : 'Nickname cleared.';
-        } })]),
+        h('p', { class: 'small', id: 'nick-help', text: 'Use a nickname, not your real name. It stays on this device only. You can leave it blank.' }),
+        nickWarn,
+        h('div', { class: 'row' }, [h('button', { type: 'button', class: 'btn alt', id: 'nick-save', text: 'Save nickname', onclick: function () { nickMsg.textContent = 'Not saved yet.'; saveNick(); } })]),
         nickMsg
       ]),
       h('section', { class: 'card' }, [
         h('h2', { text: 'Sharing a device?' }),
         h('p', { text: 'Progress is saved only in this browser on this device. Nothing is sent anywhere. Press Reset when you are done so the next student starts fresh.' }),
-        h('div', { class: 'row' }, [h('button', { type: 'button', class: 'btn danger', id: 'reset-btn', text: 'Reset progress', onclick: function () { confirmRow.hidden = false; document.getElementById('reset-yes').focus(); } })]),
+        h('div', { class: 'row' }, [h('button', { type: 'button', class: 'btn danger', id: 'reset-btn', text: 'Reset progress', onclick: function () { confirmRow.hidden = false; document.getElementById('reset-cancel').focus(); } })]),
         confirmRow,
         h('p', { class: 'status', id: 'reset-msg', role: 'status', 'aria-live': 'polite' })
       ]),
@@ -307,12 +391,31 @@
     ];
   }
 
+  // Two or more capitalized words in a row ("Ava Johnson") look like a real first and last name.
+  function looksLikeName(v) { return /(^|\s)[A-Z][a-z'\-]+\s+[A-Z][a-z'\-]+/.test(String(v || '')); }
+
+  // The disclaimer bar is pinned to the bottom. Pad the page by its real height so it never covers
+  // the last line or a button, and keep focused controls clear of it.
+  function padForBar() {
+    var bar = document.getElementById('disclaimer-foot');
+    if (!bar) return;
+    var ht = Math.ceil(bar.getBoundingClientRect().height);
+    document.body.style.paddingBottom = ht + 'px';
+    document.documentElement.style.scrollPaddingBottom = (ht + 8) + 'px';
+    document.body.setAttribute('data-bar-h', String(ht));
+  }
+  window.addEventListener('resize', padForBar);
+  if (window.ResizeObserver) document.addEventListener('DOMContentLoaded', function () { var b = document.getElementById('disclaimer-foot'); if (b) new ResizeObserver(padForBar).observe(b); });
+
   function notFound() {
     setTitle('Not found');
     return [heading('Page not found'), h('p', null, [h('a', { href: '#home', text: 'Go to lessons' })])];
   }
 
   function render() {
+    openGloss = [];
+    // Let a focused field finish (e.g. the nickname saves on blur) before the old view is replaced.
+    var ae = document.activeElement; if (ae && ae !== document.body && view.contains(ae) && ae.blur) ae.blur();
     if (stopGame) { try { stopGame(); } catch (e) { /* ignore */ } stopGame = null; }
     var hash = (location.hash || '#home').slice(1);
     var parts = hash.split('/');
@@ -337,5 +440,6 @@
   }
   window.addEventListener('hashchange', render);
   window.TP_APP = { render: render, h: h };
-  document.addEventListener('DOMContentLoaded', render);
+  document.addEventListener('DOMContentLoaded', function () { padForBar(); render(); });
+  window.TP_APP.looksLikeName = looksLikeName;
 })();

@@ -93,8 +93,25 @@ select{font:inherit;padding:.45rem;border:2px solid var(--line);border-radius:.4
 .calls .btn.is-wrong{opacity:1;border-color:var(--bad);background:var(--bad-bg);border-width:3px}
 .calls .btn.is-wrong::after{content:"your call";margin-left:auto;color:var(--bad);font-size:.85rem}
 .cell.S.on,.cell.F.on{background-image:none;outline-width:4px}
-#disclaimer-foot{border-bottom:none;border-top:1px solid #e3cf8f;margin-top:1rem}
-.foot{max-width:60rem;margin:1rem auto 2rem;padding:0 1rem;color:var(--muted);font-size:.9rem}
+/* bottom copy of the disclaimer: a slim bar pinned to the bottom of the screen. app.js pads the
+   page by the bar's measured height so it never covers content. */
+#disclaimer-foot{position:fixed;left:0;right:0;bottom:0;z-index:5;border-bottom:none;border-top:1px solid #e3cf8f;padding:.35rem .75rem;font-size:.9rem;line-height:1.35;box-shadow:0 -2px 6px rgba(0,0,0,.08)}
+.foot{max-width:60rem;margin:1rem auto 1rem;padding:0 1rem;color:var(--muted);font-size:.9rem}
+/* word help */
+.term{font:inherit;color:inherit;background:none;border:0;padding:.6rem 0;margin:-.6rem 0;display:inline;line-height:inherit;cursor:pointer;text-decoration:underline dotted var(--accent) 2px;text-underline-offset:3px}
+.term:hover{color:var(--accent)}
+.term[aria-expanded="true"]{text-decoration-style:solid}
+.gloss{color:var(--ok);font-weight:600}
+.warn{margin:.4rem 0 0;padding:.4rem .6rem;border-radius:.4rem;background:var(--warn-bg);color:#3d2e00;font-weight:600}
+.firsts summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700}
+/* path game layout: map and controls side by side on wide screens */
+.path-wrap{display:flex;flex-wrap:wrap;gap:.25rem 1rem;align-items:flex-start}
+.path-wrap .map{flex:1 1 22rem;max-width:28rem}
+.path-side{flex:1 1 16rem;min-width:0}
+.path-side .row:first-of-type{margin-top:.25rem}
+#path-route{margin:.25rem 0}
+/* visual observer: after a call, other choices stay readable (no fading) */
+.calls .btn[disabled]{opacity:1;color:var(--muted);background:#f3f5f8;border-color:var(--line)}
 @media (max-width:480px){
   h1{font-size:1.35rem}
   main{padding:.75rem}
@@ -102,7 +119,22 @@ select{font:inherit;padding:.45rem;border:2px solid var(--line);border-radius:.4
   .hud{gap:.25rem}
   .hud p{margin:.15rem 0}
   .hud .pad{order:-1}
-  .cell{font-size:.7rem}
+  /* phone: Start/Pause first, then the sky, then the climb/descend pad, all on the first screen */
+  .hover-wrap{flex-direction:column;gap:.4rem}
+  .hover-wrap .hud{display:contents}
+  .hover-wrap .hover-ctl{order:0;margin:0;display:flex;gap:.5rem}
+  .hover-ctl .btn{flex:1}
+  .hover-wrap .sky{order:1;flex:none;height:12rem}
+  .hover-wrap .hud .pad{order:2}
+  .hover-wrap .hud .meter{order:3;margin:0}
+  .hover-wrap .hud .status{order:4;margin:0}
+  .path-wrap{flex-direction:column}
+  .path-wrap .map{flex:none;max-width:20rem;align-self:center}
+  .path-side{display:contents}
+  #path-msg{order:-2;width:100%}
+  .path-next-row{order:-1;margin:0}
+  .cell{font-size:1rem}
+  #disclaimer-foot{font-size:.8rem;padding:.3rem .5rem;line-height:1.3}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
