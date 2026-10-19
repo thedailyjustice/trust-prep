@@ -8,8 +8,6 @@ A classroom practice tool for a 7th grade STEM class, Quarter 2.
 
 Students who finish everything see "Practice complete" and a plain link to the FAA's list of TRUST test administrators.
 
-It is also separate from the SI Challenge entry (Fault Finder). It shares no code or content with it.
-
 ## What's inside
 - 11 short lessons, each with a check you can fix until you reach 100%
 - A 12-question mixed practice quiz (also fix-until-100%)
