@@ -250,9 +250,14 @@
     var m = C.MODULES.filter(function (x) { return x.n === n; })[0];
     if (!m) return notFound();
     setTitle('Module ' + m.n + ': ' + m.title);
-    var lesson = h('section', { class: 'card lesson', 'aria-labelledby': 'les-h' }, [
+    var hint = hasGloss(m) ? h('p', { class: 'small', id: 'gloss-hint', text: C.GLOSS_HINT }) : null;
+    // PROTOTYPE: modules with a slide deck show their lesson lines as slides (same lines, same order)
+    var lesson = window.TP_SLIDES && window.TP_SLIDES.mount(m.n, {
+      h: h, hint: hint, keepClear: keepClearOfBar, checkSel: '#chk-h',
+      line: function (id) { return lessonLine(m.lesson.filter(function (l) { return l[0] === id; })[0]); }
+    }) || h('section', { class: 'card lesson', 'aria-labelledby': 'les-h' }, [
       h('h2', { id: 'les-h', text: 'Lesson' }),
-      hasGloss(m) ? h('p', { class: 'small', id: 'gloss-hint', text: C.GLOSS_HINT }) : null,
+      hint,
       h('ul', null, m.lesson.map(function (l) { return lessonLine(l); }))
     ]);
     var next = C.MODULES.filter(function (x) { return x.n === n + 1; })[0];
@@ -308,7 +313,8 @@
       h('ul', { class: 'grid' }, [
         h('li', null, [h('a', { class: 'tile', href: '#game/hover' }, [h('span', { class: 'ttl', text: 'Hover hold' }), h('span', { text: 'Keep the drone steady inside the green band. Arrow keys or touch buttons.' }), h('span', { class: 'badge' + (g.hover.wins ? ' done' : ''), text: 'Best: ' + g.hover.best + '% in band' })])]),
         h('li', null, [h('a', { class: 'tile', href: '#game/path' }, [h('span', { class: 'ttl', text: 'Airspace path' }), h('span', { text: 'Plan a route around airports, TFRs, and stadiums at 400 feet or lower.' }), h('span', { class: 'badge' + (g.path.done.length ? ' done' : ''), text: g.path.done.length + ' of ' + C.PATH_LEVELS.length + ' maps solved' })])]),
-        h('li', null, [h('a', { class: 'tile', href: '#game/vo' }, [h('span', { class: 'ttl', text: 'Visual observer calls' }), h('span', { text: 'You are the observer. Spot the hazard and make the right call.' }), h('span', { class: 'badge' + (g.vo.best === C.VO_SCENES.length ? ' done' : ''), text: 'Best: ' + g.vo.best + ' of ' + C.VO_SCENES.length })])])
+        h('li', null, [h('a', { class: 'tile', href: '#game/vo' }, [h('span', { class: 'ttl', text: 'Visual observer calls' }), h('span', { text: 'You are the observer. Spot the hazard and make the right call.' }), h('span', { class: 'badge' + (g.vo.best === C.VO_SCENES.length ? ' done' : ''), text: 'Best: ' + g.vo.best + ' of ' + C.VO_SCENES.length })])]),
+        window.TP_GAMES && window.TP_GAMES.fixit ? h('li', null, [h('a', { class: 'tile', href: '#game/fixit' }, [h('span', { class: 'ttl', text: 'Fix it' }), h('span', { text: 'Each scene has one thing wrong. Fix it, then press Check.' }), (function () { var fs = window.TP_GAMES.fixit.readSave(); return h('span', { class: 'badge' + (fs.plays ? ' done' : ''), text: fs.plays ? 'Best: ' + fs.best + ' of ' + fs.of + ' on the first try' : 'Not played yet' }); })()])]) : null
       ])
     ];
   }

@@ -149,3 +149,83 @@ select{font:inherit;padding:.45rem;border:2px solid var(--line);border-radius:.4
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+/* slide decks (PROTOTYPE) */
+.deck .stage{touch-action:pan-y;overflow:hidden}
+.deck .slide{margin:0}
+.deck .dg{display:block;width:100%;height:auto;aspect-ratio:16/9;max-width:calc(min(44vh,20rem) * 16 / 9);margin:0 auto;border:1px solid var(--line);border-radius:.5rem;background:#fff}
+.deck .cap,.deck .dg-legend{max-width:calc(min(44vh,20rem) * 16 / 9);margin-left:auto;margin-right:auto}
+.deck .cap{margin-top:.5rem;min-height:3.1em}
+.deck .cap ul{margin:0}
+.dg-legend{list-style:none;padding:0;margin:.5rem auto 0;font-size:.95rem}
+.dg-legend li{display:flex;gap:.5rem;align-items:flex-start;margin:.25rem 0}
+.dg-legend .sw{flex:none;width:1.1rem;height:1.1rem;margin-top:.2rem;border:1.5px solid #1a1f2b;border-radius:3px}
+.sw-sky{background:#eaf3fc}.sw-zone{background:#d9d2ec}
+.deck-nav{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.5rem}
+.deck-nav .btn{min-height:44px;min-width:6rem}
+.deck-nav .btn[aria-disabled="true"]{cursor:not-allowed;background:#e8ecf3;color:#3d4657;border:2px dashed #8a94a6}
+.deck-pos{display:flex;flex-direction:column;align-items:center;gap:.2rem;min-width:0}
+.deck .counter{margin:0;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.deck .dots{display:flex;gap:.35rem}
+.deck .dot{width:.6rem;height:.6rem;border-radius:50%;border:2px solid var(--accent);background:#fff}
+.deck .dot.on{background:var(--accent)}
+.deck .in-next{animation:deck-in-next .22s ease-out}
+.deck .in-prev{animation:deck-in-prev .22s ease-out}
+@keyframes deck-in-next{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@keyframes deck-in-prev{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.deck .in-next,.deck .in-prev{animation:none}}
+@media (max-width:480px){.deck-nav .btn{min-width:5.25rem;padding-left:.6rem;padding-right:.6rem}}
+/* diagram parts: original, simple shapes; no chart symbology, no seals or logos */
+.dg-sky{fill:#eaf3fc}.dg-ground{fill:#7c9b5f}.dg-room{fill:#f3f5f9}
+.dg-line{stroke:#4a5468;stroke-width:2}
+.dg-ceiling{stroke:#a3231b;stroke-width:3;stroke-dasharray:8 6}
+.dg-dim{stroke:#1a1f2b;stroke-width:2}
+.dg-label{font:600 12px system-ui,sans-serif;fill:#1a1f2b;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+.dg-strong{font-size:14px;font-weight:800}
+.dg-on-ground{fill:#fff;stroke:#3e5a26}
+.dg-arm{stroke:#1a1f2b;stroke-width:2}.dg-rotor{fill:#9aa6b8}.dg-body{fill:#0b5cad}.dg-cam{fill:#1a1f2b}
+.dg-view{fill:rgba(11,92,173,.15)}
+.dg-person{fill:#f2c79b;stroke:#1a1f2b;stroke-width:1.5}.dg-person-line{fill:none;stroke:#1a1f2b;stroke-width:3;stroke-linecap:round}.dg-eye{fill:#1a1f2b}.dg-ctl{fill:#4a5468}
+.dg-sight{stroke:#17663a;stroke-width:2.5;stroke-dasharray:6 5}
+.dg-talk{fill:none;stroke:#0b5cad;stroke-width:2;stroke-linecap:round}
+.dg-fuse{fill:#fff;stroke:#1a1f2b;stroke-width:1.5}.dg-wing{fill:#c9d0dc;stroke:#1a1f2b;stroke-width:1.2}.dg-skid{fill:none;stroke:#1a1f2b;stroke-width:2}
+.dg-path{stroke:#4a5468;stroke-width:2;stroke-dasharray:5 4}.dg-head{fill:#1a1f2b}
+.dg-move{fill:none;stroke:#17663a;stroke-width:3}
+.dg-zone{fill:#d9d2ec;stroke:#1a1f2b;stroke-width:1.5}
+.dg-runway{fill:#4a5468}
+.dg-device{fill:#4a5468}.dg-screen{fill:#fff}.dg-row{stroke:#9aa6b8;stroke-width:4;stroke-linecap:round}
+.dg-check{fill:none;stroke:#17663a;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.dg-card{fill:#fff;stroke:#c9d0dc;stroke-width:1.5}.dg-bar-full{fill:#17663a}
+.dg-house{fill:#f6e7cf;stroke:#1a1f2b;stroke-width:1.5}.dg-door{fill:#8a5a32}
+.dg-bolt{fill:#ffbf47;stroke:#1a1f2b;stroke-width:1.2}
+.dg-glass{fill:#ffe9b0;stroke:#1a1f2b;stroke-width:1.5}
+.dg-tower{fill:#c9d0dc;stroke:#1a1f2b;stroke-width:1.5}.dg-cab{fill:#9fc3ea;stroke:#1a1f2b;stroke-width:1.5}
+.dg-handset{fill:#4a5468}.dg-x{stroke:#a3231b;stroke-width:3;stroke-linecap:round}
+.dg-map{fill:#f3efe2;stroke:#1a1f2b;stroke-width:1.5}.dg-road{fill:none;stroke:#c9a46b;stroke-width:4}
+.dg-lens{fill:rgba(255,255,255,.6);stroke:#1a1f2b;stroke-width:3}.dg-handle{stroke:#1a1f2b;stroke-width:5;stroke-linecap:round}
+/* Fix it game (PROTOTYPE) */
+.fx-prompt{font-weight:700;margin:.25rem 0 .5rem}
+.fx-stage .dg{display:block;width:100%;height:auto;aspect-ratio:16/9;max-width:calc(min(44vh,20rem) * 16 / 9);margin:0 auto;border:1px solid var(--line);border-radius:.5rem;background:#fff;touch-action:none;user-select:none;-webkit-user-select:none}
+.fx-stage .dg:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.fx-mover{cursor:grab}
+.fx-grab{fill:transparent}
+.fx-zone{fill:none;stroke:none;pointer-events:none}
+.fx-pad{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;margin:.5rem 0}
+.fx-pad .btn{min-width:56px;min-height:48px;font-size:1.2rem;touch-action:manipulation}
+.fx-opts{margin:.5rem 0}
+.fx-opts .btn{min-height:44px;justify-content:flex-start;text-align:left;background:#fff;color:var(--ink);border-color:var(--line)}
+.fx-opts .btn.is-picked{border-color:var(--accent);border-width:3px;background:#eef4fc}
+.fx-opts .btn.is-right{border-color:var(--ok);background:var(--ok-bg);border-width:3px;color:var(--ink)}
+.fx-opts .btn[disabled]{cursor:default}
+.fx-act{margin:.5rem 0}
+.fx-fb{min-height:3em;font-weight:600}
+.fx-fb.right{color:var(--ok)} .fx-fb.wrong{color:var(--bad)}
+#fx-where{margin:.35rem 0 0;text-align:center;font-weight:700}
+.fx-tree{fill:#3f7a3a;stroke:#1f4d1d;stroke-width:1.5}.fx-trunk{fill:#8a5a2b}
+.fx-field{fill:#9cc07a}
+.fx-goggles{fill:#1a1f2b}
+.fx-sight-blocked{stroke:#a3231b;stroke-width:2.5;stroke-dasharray:2 5}
+.fx-scale{fill:#c9d0dc;stroke:#1a1f2b;stroke-width:1.5}
+.fx-night{fill:#14213d}.fx-night-ground{fill:#2c3b24}.fx-moon{fill:#f4f1de}
+.fx-dark .dg-body{fill:#2a3550}.fx-dark .dg-rotor{fill:#3a4560}.fx-dark .dg-arm{stroke:#2a3550}
+@media (max-width:480px){.fx-pad .btn{min-width:52px}}
+.fx-card .btn{-webkit-tap-highlight-color:transparent}
