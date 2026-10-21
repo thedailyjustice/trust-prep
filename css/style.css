@@ -229,3 +229,12 @@ select{font:inherit;padding:.45rem;border:2px solid var(--line);border-radius:.4
 .fx-dark .dg-body{fill:#2a3550}.fx-dark .dg-rotor{fill:#3a4560}.fx-dark .dg-arm{stroke:#2a3550}
 @media (max-width:480px){.fx-pad .btn{min-width:52px}}
 .fx-card .btn{-webkit-tap-highlight-color:transparent}
+
+/* Recess 605d5c6: phone text and tap sizes */
+.small,.srcs{font-size:1rem}
+.backlink{display:inline-flex;align-items:center;min-height:44px}
+.srcs li a{display:inline-block;min-height:44px;line-height:44px;word-break:break-all}
+@media (max-width:480px){
+  #disclaimer-foot{font-size:1rem}
+  .dg-label{font-size:17px}.dg-strong{font-size:18px}
+}

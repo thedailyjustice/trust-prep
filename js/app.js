@@ -328,7 +328,7 @@
       h: h, C: C, state: function () { return state; }, save: save, sourcesBox: sourcesBox
     };
     setTimeout(function () { stopGame = G.start(box, api); }, 0);
-    return [heading(G.title), h('p', null, [h('a', { href: '#games', text: '← All games' })]), box];
+    return [heading(G.title), h('p', null, [h('a', { href: '#games', class: 'backlink', text: '← All games' })]), box];
   }
 
   function progressView() {

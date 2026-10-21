@@ -210,7 +210,7 @@
           s('rect', { x: 180, y: 46, width: 110, height: 80, rx: 4, class: 'dg-map' }),
           s('path', { d: 'M180 86 Q220 70 240 96 T290 90', class: 'dg-road' }),
           s('circle', { cx: 252, cy: 78, r: 15, class: 'dg-lens' }), s('line', { x1: 263, y1: 89, x2: 280, y2: 106, class: 'dg-handle' }),
-          label(235, 40, 'B4UFLY', 'middle', 'dg-strong'), label(235, 144, 'map check, not permission', 'middle')];
+          label(235, 40, 'B4UFLY', 'middle', 'dg-strong'), label(235, 131, 'map check,', 'middle'), label(235, 157, 'not permission', 'middle')];
       }
     }
   };
@@ -282,7 +282,7 @@
     var next = h('button', { type: 'button', class: 'btn', id: 'deck-next', text: 'Next' });
     var nav = h('div', { class: 'deck-nav', id: 'deck-nav' }, [back, h('div', { class: 'deck-pos' }, [counter, dots]), next]);
     var sec = h('section', { class: 'card deck lesson', id: 'deck', 'aria-roledescription': 'slide deck', 'aria-labelledby': 'les-h', 'data-module': String(n) }, [
-      h('h2', { id: 'les-h', text: 'Lesson' }), opts.hint || null, stage, nav
+      h('h2', { id: 'les-h', text: 'Lesson' }), opts.hint || null, nav, stage
     ]);
 
     function show(dir) {
@@ -299,7 +299,9 @@
       if (shownOnce) saveIndex(n, i);
       shownOnce = true;
     }
+    var lastGo = 0;
     function go(d) {
+      var now = Date.now(); if (now - lastGo < 400) return; lastGo = now;
       var j = i + d;
       if (j < 0) return;
       if (j >= len) { toCheck(); return; }

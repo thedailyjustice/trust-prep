@@ -141,7 +141,10 @@
   document.addEventListener('click', function (e) {
     if (e.detail > 0 && Date.now() < swallowUntil) { e.preventDefault(); e.stopPropagation(); }
   }, true);
-  function onTap(btn, fn) {
+  var lastFire = 0;
+  function guard(fn) { return function () { var t = Date.now(); if (t - lastFire < 400) return; lastFire = t; fn(); }; }
+  function onTap(btn, fn0) {
+    var fn = guard(fn0);
     var downOn = false;
     btn.addEventListener('pointerdown', function (e) { downOn = e.pointerType === 'touch'; if (downOn) e.preventDefault(); });
     btn.addEventListener('pointerleave', function () { downOn = false; });

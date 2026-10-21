@@ -140,8 +140,14 @@
         if (!st.run) return;
         st.paused = !st.paused; setLabel(pauseBtn, st.paused ? 'Resume' : 'Pause', 'P');
         msg.textContent = st.paused ? 'Paused.' : 'Back to it!';
+        if (!st.paused) fitGame();
         draw();
       }
+      var refitT = 0;
+      function refitSoon(ms) { window.clearTimeout(refitT); refitT = window.setTimeout(function () { if (st.run && !st.paused && document.body.contains(box)) fitGame(); }, ms); }
+      window.addEventListener('resize', function () { refitSoon(250); });
+      window.addEventListener('orientationchange', function () { refitSoon(400); });
+      window.addEventListener('scroll', function () { if (!st.up && !st.down) refitSoon(600); }, { passive: true });
       startBtn.addEventListener('click', begin);
       pauseBtn.addEventListener('click', togglePause);
       function hold(btn, key) {
