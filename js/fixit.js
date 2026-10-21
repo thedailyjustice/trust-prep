@@ -143,8 +143,8 @@
   }, true);
   var lastFire = 0;
   function guard(fn) { return function () { var t = Date.now(); if (t - lastFire < 400) return; lastFire = t; fn(); }; }
-  function onTap(btn, fn0) {
-    var fn = guard(fn0);
+  function onTap(btn, fn0, noGuard) {
+    var fn = noGuard ? fn0 : guard(fn0);
     var downOn = false;
     btn.addEventListener('pointerdown', function (e) { downOn = e.pointerType === 'touch'; if (downOn) e.preventDefault(); });
     btn.addEventListener('pointerleave', function () { downOn = false; });
@@ -170,7 +170,7 @@
       var pad = h('div', { class: 'fx-pad', id: 'fx-pad', role: 'group', 'aria-label': 'Move' });
       var dirs = [['up', '▲', 'Move up', 0, -1], ['left', '◀', 'Move left', -1, 0], ['right', '▶', 'Move right', 1, 0], ['down', '▼', 'Move down', 0, 1]];
       var dirBtn = {};
-      dirs.forEach(function (d) { dirBtn[d[0]] = h('button', { type: 'button', class: 'btn alt', id: 'fx-' + d[0], 'aria-label': d[2], text: d[1] }); onTap(dirBtn[d[0]], function () { nudge(d[3], d[4]); }); pad.appendChild(dirBtn[d[0]]); });
+      dirs.forEach(function (d) { dirBtn[d[0]] = h('button', { type: 'button', class: 'btn alt', id: 'fx-' + d[0], 'aria-label': d[2], text: d[1] }); onTap(dirBtn[d[0]], function () { nudge(d[3], d[4]); }, true); pad.appendChild(dirBtn[d[0]]); });
       var opts = h('div', { class: 'calls fx-opts', id: 'fx-opts', role: 'radiogroup', 'aria-labelledby': 'fx-prompt' });
       var checkBtn = h('button', { type: 'button', class: 'btn', id: 'fx-check', text: 'Check' }); onTap(checkBtn, checkIt);
       var nextBtn = h('button', { type: 'button', class: 'btn', id: 'fx-next', hidden: true }); onTap(nextBtn, nextRound);
