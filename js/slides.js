@@ -132,7 +132,7 @@
           s('rect', { x: 128, y: 154, width: 64, height: 6, class: 'dg-runway' }),
           drone(38, 132, 1)];
       },
-      legend: [['sw-sky', 'uncontrolled (Class G) airspace: You don\'t need permission to fly there.'],
+      legend: [['sw-sky', 'Uncontrolled (Class G) airspace: You don\'t need permission to fly there.'],
                ['sw-zone', 'Controlled airspace: You need FAA permission before you fly there, and you get it through LAANC or DroneZone.']]
     },
     // ---- Module 1 pictures (no words on them) ----
